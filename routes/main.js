@@ -25,6 +25,7 @@ function mainHandler(server, client) {
         case 'REGISTER':
           client.id = action.id; // eslint-disable-line no-param-reassign
           console.log(chalk.green('+'), client.id, chalk.cyan(routes.MAIN));
+          sendToVizualizers(server, { type: 'REGISTER', id: client.id });
           break;
 
         case 'DATA':

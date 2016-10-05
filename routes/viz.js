@@ -20,6 +20,8 @@ function getMainClient(server, id) {
 }
 
 function vizHandler(server, client) {
+  console.log(chalk.green('+'), 'new', chalk.cyan(routes.VIZ), 'client');
+
   client.on('message', function msgHandler(msg) {
     // message from WebApp sosies-visualizer
     var action;
@@ -43,11 +45,21 @@ function vizHandler(server, client) {
           break;
 
         default:
+          console.warn(chalk.yellow('!'), chalk.cyan(routes.VIZ), 'server does not handle', chalk.yellow(action.type), 'messages');
           break;
       }
     } catch (err) {
-      console.log(chalk.red('!'), ' viz client sent a non-valid JSON message');
+      if (err instanceof SyntaxError) {
+        console.warn(chalk.red('!'), 'viz client sent a non-valid JSON message');
+      } else {
+        console.error(chalk.red('ERR!', 'unable to process viz client message'));
+        console.error(err.stack);
+      }
     }
+  });
+
+  client.on('close', function onClose() {
+    console.log(chalk.red('-'), chalk.cyan(routes.VIZ), 'client left');
   });
 }
 
