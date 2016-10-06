@@ -2,6 +2,8 @@ var ws = require('ws');
 var routes = require('./routes');
 
 var wss = new ws.Server({ host: '0.0.0.0', port: process.argv[2] || 9050 });
+wss.mdmsInstances = {};
+wss.availablePort = 9060;
 
 wss.on('connection', function connHandler(client) {
   // delegate routing

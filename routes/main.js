@@ -24,8 +24,13 @@ function mainHandler(server, client) {
       switch (action.type) {
         case 'REGISTER':
           client.id = action.id; // eslint-disable-line no-param-reassign
-          console.log(chalk.green('+'), client.id, chalk.cyan(routes.MAIN));
-          sendToVizualizers(server, { type: 'REGISTER', id: client.id });
+          client.port = action.port; // eslint-disable-line no-param-reassign
+          console.log(chalk.green('+'), 'new client registered', client.id, ':' + chalk.cyan(client.port));
+          sendToVizualizers(server, {
+            type: 'REGISTER',
+            id: client.id,
+            port: client.port
+          });
           break;
 
         case 'DATA':
@@ -33,6 +38,7 @@ function mainHandler(server, client) {
           sendToVizualizers(server, {
             type: 'DATA',
             id: client.id,
+            port: client.port,
             data: client.latestData
           });
           break;

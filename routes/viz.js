@@ -1,4 +1,6 @@
+var path = require('path');
 var chalk = require('chalk');
+var exec = require('child_process');
 
 var routes = require('.');
 
@@ -8,7 +10,7 @@ function getMainClients(server) {
       return client.upgradeReq.url === routes.MAIN;
     })
     .map(function mapHandler(client) {
-      return { id: client.id, data: client.latestData };
+      return { id: client.id, port: client.port, data: client.latestData };
     });
 }
 
@@ -19,17 +21,18 @@ function getMainClient(server, id) {
     });
 }
 
-function vizHandler(server, client) {
+function vizHandler(server, viz) {
   console.log(chalk.green('+'), 'new', chalk.cyan(routes.VIZ), 'client');
 
-  client.on('message', function msgHandler(msg) {
+  viz.on('message', function msgHandler(msg) {
     // message from WebApp sosies-visualizer
     var action;
+    var mdms;
     try {
       action = JSON.parse(msg);
       switch (action.type) {
         case 'ALL_DATA':
-          client.send(JSON.stringify({
+          viz.send(JSON.stringify({
             type: 'ALL_DATA',
             clients: getMainClients(server)
           }));
@@ -37,11 +40,40 @@ function vizHandler(server, client) {
           break;
 
         case 'DATA':
-          client.send(JSON.stringify({
+          viz.send(JSON.stringify({
             type: 'DATA',
             id: action.id,
             data: getMainClient(server, action.id)
           }));
+          break;
+
+        case 'CREATE':
+          console.log(chalk.green('>'), 'creating new MdMS instance', chalk.cyan(action.id));
+          server.availablePort += 1; // eslint-disable-line no-param-reassign
+          server.mdmsInstances[action.id] = exec.spawn( // eslint-disable-line no-param-reassign
+            'ringo',
+            ['server.js', '--port=' + server.availablePort, action.id],
+            { cwd: path.resolve(__dirname, '..', '..', 'mdms-ringojs') }
+          );
+          server.mdmsInstances[action.id].stdout.on('data', function onData(data) {
+            var str = data.toString().replace(/\\n/g, '').trim();
+            if (str.length > 0) {
+              console.log(chalk.cyan(action.id), chalk.green('>'), str);
+            }
+          });
+          server.mdmsInstances[action.id].stderr.on('data', function onData(data) {
+            var str = data.toString().replace(/\\n/g, '').trim();
+            if (str.length > 0) {
+              console.log(chalk.cyan(action.id), chalk.red('>'), str);
+            }
+          });
+          break;
+
+        case 'DELETE':
+          mdms = server.mdmsInstances[action.id];
+          if (mdms) {
+            mdms.kill('SIGHUP');
+          }
           break;
 
         default:
@@ -58,7 +90,7 @@ function vizHandler(server, client) {
     }
   });
 
-  client.on('close', function onClose() {
+  viz.on('close', function onClose() {
     console.log(chalk.red('-'), chalk.cyan(routes.VIZ), 'client left');
   });
 }
