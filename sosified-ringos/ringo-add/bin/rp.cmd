@@ -1,0 +1,1 @@
+/home/leiko/Programs/ringojs-0.12/packages/rp/bin/rp.cmd

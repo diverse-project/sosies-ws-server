@@ -1,0 +1,1 @@
+@ringo "rp/lib/rp" %*

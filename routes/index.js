@@ -19,6 +19,5 @@ function routeHandler(server, client) {
 }
 
 module.exports = routeHandler;
-
 exports.MAIN = MAIN;
 exports.VIZ = VIZ;
